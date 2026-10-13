@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Job Radar Germany</title>
+<meta name="description" content="Find Werkstudent, part-time and internship roles in Germany that fit your CV, fields, cities and language level.">
+<meta name="robots" content="noindex">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+/* Layout: a guided intake form. Sticky section index on the left (top strip on phones), one column of question groups, a fixed save bar. Second tab shows the person's own matches. Same harbour palette as Werkstudent Radar: navy ink, cool paper, buoy-orange accent. */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#14212e; --muted:#5a6876; --line:#d9e0e7; --chip:#e8edf2;
+  --accent:#e2571b; --accent-ink:#ffffff; --accent-soft:#fde9df;
+  --ok:#1f7a4d; --ok-soft:#e1f2e8; --warn:#9a6a00; --warn-soft:#fbf0d4; --bad:#b4322a; --bad-soft:#f9e1de;
+  --f-display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1720; --surface:#16212c; --ink:#e6edf3; --muted:#93a3b3; --line:#283645; --chip:#1f2c38;
+  --accent:#ff7a3d; --accent-ink:#1a0d06; --accent-soft:#3a2216;
+  --ok:#5cc98e; --ok-soft:#14301f; --warn:#e5b54a; --warn-soft:#33290f; --bad:#f07a70; --bad-soft:#3a1916; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1720; --surface:#16212c; --ink:#e6edf3; --muted:#93a3b3; --line:#283645; --chip:#1f2c38;
+  --accent:#ff7a3d; --accent-ink:#1a0d06; --accent-soft:#3a2216;
+  --ok:#5cc98e; --ok-soft:#14301f; --warn:#e5b54a; --warn-soft:#33290f; --bad:#f07a70; --bad-soft:#3a1916; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-bottom:96px}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 120px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,5vw,42px);line-height:1.05;margin:0;text-wrap:balance}
+h1 em{font-style:normal;color:var(--accent)}
+.lede{color:var(--muted);max-width:66ch;margin:0}
+.notice{font-size:14px;padding:10px 14px;border-radius:6px;background:var(--warn-soft);color:var(--warn);max-width:80ch}
+.notice.ok{background:var(--ok-soft);color:var(--ok)}
+.notice.bad{background:var(--bad-soft);color:var(--bad)}
+.views{display:flex;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.vbtn{font:inherit;font-family:var(--f-display);font-weight:700;font-size:16px;background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 14px 9px;cursor:pointer;margin-bottom:-1px}
+.vbtn[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.vbtn small{font-family:var(--f-mono);font-weight:400;font-size:12px;margin-left:4px}
+.layout{display:grid;grid-template-columns:200px minmax(0,1fr);gap:28px;align-items:start}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:2px}
+nav.toc a{display:flex;justify-content:space-between;gap:8px;text-decoration:none;color:var(--muted);font-size:14px;padding:6px 10px;border-radius:5px;border-left:2px solid transparent}
+nav.toc a:hover{color:var(--ink);background:var(--chip)}
+nav.toc a .st{font-family:var(--f-mono);font-size:11px}
+nav.toc a.done .st{color:var(--ok)}
+nav.toc a.req .st{color:var(--accent)}
+form{display:flex;flex-direction:column;gap:18px;min-width:0}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:18px 18px 20px;margin:0;display:flex;flex-direction:column;gap:16px;min-width:0;scroll-margin-top:16px}
+legend{font-family:var(--f-display);font-weight:700;font-size:20px;padding:0 6px;margin-left:-6px}
+.hint{font-size:13.5px;color:var(--muted);margin:-8px 0 0;max-width:70ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 16px}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f > label,.lab{font-size:13.5px;font-weight:600}
+.lab .opt,.f > label .opt{font-weight:400;color:var(--muted)}
+.req-star{color:var(--accent)}
+input[type=text],input[type=email],input[type=url],input[type=number],input[type=date],select,textarea{font:inherit;font-size:14.5px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+textarea{resize:vertical;min-height:72px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.chip:focus-within,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative;display:inline-flex}
+.chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chip span{font-size:13.5px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);cursor:pointer;user-select:none}
+.chip input:checked + span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip .rank{font-family:var(--f-mono);font-size:11px;margin-left:6px;color:var(--accent)}
+.group-t{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;background:var(--bg)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.btn{font:inherit;font-size:14px;font-weight:600;padding:8px 16px;border-radius:6px;border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{border-color:var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.cvmeta{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.linkrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:8px;align-items:center}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{margin-top:4px;width:16px;height:16px;flex:none}
+.savebar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;z-index:5}
+.savebar .in{max-width:1080px;width:100%;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.meter{flex:1 1 200px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.meter .bar{height:6px;background:var(--chip);border-radius:3px;overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.meter .t{font-size:13px;color:var(--muted)}
+.savestate{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.job{display:grid;grid-template-columns:52px minmax(0,1fr) 160px;gap:12px 18px;padding-block:16px;border-bottom:1px solid var(--line)}
+.fit{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1}
+.fit small{font-family:var(--f-mono);font-size:11px;color:var(--muted);font-weight:400}
+.job a.t{font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--ink);text-decoration:none}
+.job a.t:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+.meta{font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 14px}
+.meta .co{color:var(--ink);font-weight:600}
+.why{margin:6px 0 0;font-size:14px;max-width:70ch}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{font-size:12px;padding:2px 8px;border-radius:4px;background:var(--chip)}
+.pill.en{background:var(--ok-soft);color:var(--ok)} .pill.de{background:var(--bad-soft);color:var(--bad)}
+.empty{color:var(--muted);padding:30px 0;max-width:62ch}
+table.adm{border-collapse:collapse;width:100%;font-size:14px}
+table.adm th,table.adm td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.adm th{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.tbl{overflow-x:auto}
+@media (max-width:820px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  nav.toc{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}
+  nav.toc a{border:1px solid var(--line);padding:4px 10px}
+  .job{grid-template-columns:44px minmax(0,1fr)}
+  .job .side{grid-column:1 / -1}
+  .linkrow{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){.meter .bar i{transition:none}}
+</style>
+<style>
+[hidden]{display:none!important}
+body{margin:0}
+.authbox{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px;display:flex;flex-direction:column;gap:14px;max-width:460px}
+.authbox h2{font-family:var(--f-display);font-size:22px;margin:0}
+.who{display:flex;gap:10px;align-items:center;justify-content:flex-end;font-size:13.5px;color:var(--muted);flex-wrap:wrap}
+a{color:var(--ink);text-underline-offset:3px}
+</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Students in Germany · Werkstudent · part-time · internships</div>
+    <h1>Job <em>Radar</em> Germany</h1>
+    <p class="lede">Tell the radar who you are and what you're looking for. Upload your CV, pick your fields and cities, and add any links you want checked. Each crawl then searches German job boards, company career pages and startup boards for roles that fit you, and they appear under <b>My matches</b>. Only you and the person running the radar can see your answers. <a href="privacy.html">Privacy</a></p>
+  </header>
+
+  <div class="notice" id="gate">Loading…</div>
+
+  <section id="auth" hidden>
+    <form id="authform" class="authbox" novalidate>
+      <h2>Sign in with your email</h2>
+      <p class="hint" style="margin:0">No password needed. We'll email you a sign-in link and a 6-digit code.</p>
+      <div class="f"><label for="authemail">Email</label><input type="email" id="authemail" autocomplete="email" placeholder="you@example.com" required></div>
+      <div><button type="submit" class="btn primary" id="sendlink">Email me a sign-in link</button></div>
+      <div class="f" id="codewrap" hidden><label for="authcode">Or type the 6-digit code from the email</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="authcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="max-width:180px"><button type="button" class="btn" id="verify">Sign in</button></div></div>
+      <p class="cvmeta" id="authmsg"></p>
+    </form>
+  </section>
+
+  <div class="who" id="who" hidden><span id="whoemail"></span><button type="button" class="btn ghost" id="signout">Sign out</button></div>
+
+  <div id="app" hidden style="display:contents">
+  <div class="views" role="tablist" aria-label="View">
+    <button class="vbtn" role="tab" id="t-profile" data-view="profile" aria-selected="true">My profile</button>
+    <button class="vbtn" role="tab" id="t-matches" data-view="matches" aria-selected="false">My matches<small id="t-matches-n"></small></button>
+    <button class="vbtn" role="tab" id="t-admin" data-view="admin" aria-selected="false" hidden>Sign-ups<small id="t-admin-n"></small></button>
+  </div>
+
+  <section id="v-profile">
+  <div class="layout">
+    <nav class="toc" id="toc" aria-label="Sections"></nav>
+    <form id="form" novalidate>
+
+      <fieldset id="s-about" data-title="About you">
+        <legend>About you</legend>
+        <div class="grid">
+          <div class="f"><label for="name">Full name <span class="req-star">*</span></label><input type="text" id="name" name="name" autocomplete="name"></div>
+          <div class="f"><label for="email">Email for job alerts <span class="req-star">*</span></label><input type="email" id="email" name="email" autocomplete="email" placeholder="you@example.com"></div>
+          <div class="f"><label for="phone">Phone <span class="opt">(optional)</span></label><input type="text" id="phone" name="phone" autocomplete="tel"></div>
+          <div class="f"><label for="city">City you live in <span class="req-star">*</span></label><input type="text" id="city" name="city" placeholder="e.g. Kiel"></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-study" data-title="Studies">
+        <legend>Studies</legend>
+        <div class="grid">
+          <div class="f"><label for="uni">University <span class="req-star">*</span></label><input type="text" id="uni" name="uni" placeholder="e.g. Kiel University (CAU)"></div>
+          <div class="f"><label for="degree">Degree <span class="req-star">*</span></label>
+            <select id="degree" name="degree"><option value="">Choose…</option><option>Bachelor</option><option>Master</option><option>PhD</option><option>Diploma / Staatsexamen</option><option>Exchange / visiting student</option><option>Graduated (job seeker)</option></select></div>
+          <div class="f"><label for="subject">Field of study <span class="req-star">*</span></label><input type="text" id="subject" name="subject" placeholder="e.g. Computer Science"></div>
+          <div class="f"><label for="semester">Current semester</label><input type="number" id="semester" name="semester" min="1" max="20"></div>
+          <div class="f"><label for="grad">Expected graduation</label><input type="text" id="grad" name="grad" placeholder="e.g. Sep 2027"></div>
+          <div class="f"><label for="mandatory">Does your programme require an internship?</label>
+            <select id="mandatory" name="mandatory"><option value="">Choose…</option><option value="no">No, any internship would be voluntary</option><option value="yes">Yes, a mandatory internship (Pflichtpraktikum)</option><option value="done">Yes, but I've already done it</option><option value="unsure">Not sure</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-permit" data-title="Work permit">
+        <legend>Work permit</legend>
+        <p class="hint">This decides which offers are legal for you. For example, non-EU students can't take internships that only accept a Pflichtpraktikum unless their own programme requires one, and voluntary internships count against the yearly working-day limit.</p>
+        <div class="grid">
+          <div class="f"><label for="permit">Your situation <span class="req-star">*</span></label>
+            <select id="permit" name="permit"><option value="">Choose…</option><option value="eu">EU/EEA or Swiss citizen: no limits</option><option value="student">Non-EU student residence permit (140 full / 280 half days a year)</option><option value="jobseeker">Post-study job-seeker permit</option><option value="other">Other permit (Blue Card, family, etc.)</option><option value="unsure">Not sure</option></select></div>
+          <div class="f"><label for="daysused">Working days already used this year <span class="opt">(optional)</span></label><input type="number" id="daysused" name="daysused" min="0" max="280" placeholder="e.g. 30"></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-want" data-title="What you want">
+        <legend>What you're looking for</legend>
+        <div class="f"><span class="lab">Job types <span class="req-star">*</span></span>
+          <div class="chips" data-name="types">
+            <label class="chip"><input type="checkbox" value="Werkstudent"><span>Werkstudent / working student</span></label>
+            <label class="chip"><input type="checkbox" value="Part-time"><span>Other part-time / Minijob</span></label>
+            <label class="chip"><input type="checkbox" value="Voluntary internship"><span>Voluntary internship</span></label>
+            <label class="chip"><input type="checkbox" value="Mandatory internship"><span>Mandatory internship</span></label>
+            <label class="chip"><input type="checkbox" value="Thesis"><span>Thesis with a company</span></label>
+            <label class="chip"><input type="checkbox" value="HiWi"><span>Research assistant (HiWi)</span></label>
+            <label class="chip"><input type="checkbox" value="Full-time entry"><span>Full-time entry-level</span></label>
+          </div></div>
+        <div class="grid">
+          <div class="f"><label for="hours">Hours per week during semester</label>
+            <select id="hours" name="hours"><option value="">Choose…</option><option>Up to 10</option><option>10–15</option><option>15–20</option><option>20+ (semester break / full-time)</option></select></div>
+          <div class="f"><label for="start">Earliest start</label><input type="text" id="start" name="start" placeholder="e.g. Now, or Jan 2027"></div>
+          <div class="f"><label for="induration">Internship length you'd accept</label>
+            <select id="induration" name="induration"><option value="">Choose…</option><option>Up to 3 months</option><option>3–6 months</option><option>6+ months</option><option>Not looking for internships</option></select></div>
+          <div class="f"><label for="minpay">Minimum pay (€ per hour) <span class="opt">(optional)</span></label><input type="number" id="minpay" name="minpay" min="0" step="0.5" placeholder="e.g. 14"></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-fields" data-title="Fields">
+        <legend>Fields you want to work in</legend>
+        <p class="hint">Pick everything that interests you. The first three you pick become your priorities (marked 1, 2, 3); untick and re-tick to change the order.</p>
+        <div class="chips" data-name="fields" data-rank="3" id="fieldchips"></div>
+        <div class="grid">
+          <div class="f"><label for="roles">Job titles or keywords to search for</label><textarea id="roles" name="roles" placeholder="e.g. LLM, RAG, data engineer, Python, Power BI, SAP consultant"></textarea></div>
+          <div class="f"><label for="avoid">Roles or topics to skip</label><textarea id="avoid" name="avoid" placeholder="e.g. sales, call centre, pure Excel reporting"></textarea></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-where" data-title="Location">
+        <legend>Where you can work</legend>
+        <div class="grid">
+          <div class="f"><label for="cities">Cities where on-site work is fine <span class="req-star">*</span></label><input type="text" id="cities" name="cities" placeholder="e.g. Kiel, Hamburg, Lübeck"></div>
+          <div class="f"><label for="radius">Commute radius around those cities</label>
+            <select id="radius" name="radius"><option value="">Choose…</option><option>City only</option><option>25 km</option><option>50 km</option><option>100 km</option></select></div>
+          <div class="f"><label for="elsewhere">Roles in other German cities</label>
+            <select id="elsewhere" name="elsewhere"><option value="">Choose…</option><option value="hybrid">Only if hybrid or remote</option><option value="remote">Only if fully remote</option><option value="any">Any mode, I can relocate</option><option value="none">Not interested</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-lang" data-title="Languages">
+        <legend>Languages</legend>
+        <div class="grid">
+          <div class="f"><label for="german">German level <span class="req-star">*</span></label>
+            <select id="german" name="german"><option value="">Choose…</option><option>None</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select></div>
+          <div class="f"><label for="english">English level <span class="req-star">*</span></label>
+            <select id="english" name="english"><option value="">Choose…</option><option>A2 or lower</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select></div>
+          <div class="f"><label for="otherlang">Other languages</label><input type="text" id="otherlang" name="otherlang" placeholder="e.g. Hindi (native), French (B1)"></div>
+          <div class="f"><label for="germanplan">Learning German?</label>
+            <select id="germanplan" name="germanplan"><option value="">Choose…</option><option>Yes, taking a course now</option><option>Planning to</option><option>No</option></select></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-exp" data-title="Experience">
+        <legend>Experience and skills</legend>
+        <p class="hint">Your CV covers most of this. Use these boxes for what matters most or what your CV doesn't show.</p>
+        <div class="grid">
+          <div class="f"><label for="years">Work experience (years, incl. part-time)</label>
+            <select id="years" name="years"><option value="">Choose…</option><option>None yet</option><option>Under 1</option><option>1–2</option><option>2–4</option><option>4+</option></select></div>
+          <div class="f"><label for="certs">Certifications</label><input type="text" id="certs" name="certs" placeholder="e.g. AWS GenAI, Databricks"></div>
+        </div>
+        <div class="f"><label for="skills">Top skills and tools</label><textarea id="skills" name="skills" placeholder="e.g. Python, SQL, PyTorch, LangChain, AWS, Docker, Power BI, SolidWorks"></textarea></div>
+        <div class="f"><label for="highlights">Projects or achievements you're proudest of</label><textarea id="highlights" name="highlights"></textarea></div>
+      </fieldset>
+
+      <fieldset id="s-prefs" data-title="Preferences">
+        <legend>Company preferences</legend>
+        <div class="f"><span class="lab">Company types you'd like</span>
+          <div class="chips" data-name="companies">
+            <label class="chip"><input type="checkbox" value="Startups"><span>Startups and scale-ups</span></label>
+            <label class="chip"><input type="checkbox" value="Mid-size"><span>Mid-size (Mittelstand)</span></label>
+            <label class="chip"><input type="checkbox" value="Corporates"><span>Large corporates</span></label>
+            <label class="chip"><input type="checkbox" value="Consulting"><span>Consultancies</span></label>
+            <label class="chip"><input type="checkbox" value="Research"><span>Research institutes (Fraunhofer, DLR…)</span></label>
+            <label class="chip"><input type="checkbox" value="Public sector"><span>Public sector / university</span></label>
+          </div></div>
+        <div class="grid">
+          <div class="f"><label for="dream">Companies you'd love to work for</label><textarea id="dream" name="dream" placeholder="e.g. Otto, Airbus, small AI startups in Hamburg"></textarea></div>
+          <div class="f"><label for="exclude">Companies to leave out</label><textarea id="exclude" name="exclude" placeholder="e.g. your current employer"></textarea></div>
+        </div>
+        <div class="f"><label for="notes">Anything else the radar should know</label><textarea id="notes" name="notes" placeholder="e.g. no weekend shifts, need a role that fits a 3-day week"></textarea></div>
+      </fieldset>
+
+      <fieldset id="s-cv" data-title="CV">
+        <legend>Your CV</legend>
+        <p class="hint">Upload a PDF or Word file (max 5 MB). The text is read in your browser for matching, and the file is stored privately so the radar can attach the right CV details.</p>
+        <div class="drop" id="drop">
+          <span>Drop your CV here, or</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <label class="btn" for="cvfile">Choose file</label>
+            <input type="file" id="cvfile" accept=".pdf,.docx,.txt,.md" hidden>
+            <button type="button" class="btn ghost" id="cvpastebtn">Paste text instead</button>
+          </div>
+          <span class="cvmeta" id="cvmeta">No CV yet</span>
+        </div>
+        <div class="f" id="cvtextwrap" hidden><label for="cvtext">CV text <span class="opt">(check it reads correctly; you can edit it)</span></label><textarea id="cvtext" name="cvtext" rows="10"></textarea></div>
+      </fieldset>
+
+      <fieldset id="s-links" data-title="Links">
+        <legend>Links</legend>
+        <div class="grid">
+          <div class="f"><label for="linkedin">LinkedIn</label><input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/…"></div>
+          <div class="f"><label for="github">GitHub / GitLab</label><input type="url" id="github" name="github" placeholder="https://github.com/…"></div>
+          <div class="f"><label for="portfolio">Portfolio or website</label><input type="url" id="portfolio" name="portfolio"></div>
+        </div>
+        <div class="f"><span class="lab">Pages the radar should also watch <span class="opt">(company career pages, job boards, saved searches)</span></span>
+          <div id="watchlist" style="display:flex;flex-direction:column;gap:8px"></div>
+          <div><button type="button" class="btn ghost" id="addlink">Add a link</button></div>
+        </div>
+      </fieldset>
+
+      <fieldset id="s-alerts" data-title="Alerts">
+        <legend>Alerts and consent</legend>
+        <div class="grid">
+          <div class="f"><label for="freq">How often should the radar look?</label>
+            <select id="freq" name="freq"><option value="">Choose…</option><option>Daily</option><option>Twice a week</option><option>Weekly</option><option>Pause for now</option></select></div>
+          <div class="f"><label for="active">Search status</label>
+            <select id="active" name="active"><option value="active">Actively looking</option><option value="open">Open to good offers</option><option value="paused">Paused, don't crawl</option></select></div>
+        </div>
+        <label class="check"><input type="checkbox" id="consent" name="consent"><span>I agree that my answers and CV text are stored on Job Radar's server in the EU and read by the person running Job Radar to find jobs for me. I can change or delete them here at any time. <span class="req-star">*</span></span></label>
+        <div><button type="button" class="btn ghost" id="delete">Delete my profile</button> <span class="cvmeta" id="delconfirm"></span></div>
+      </fieldset>
+    </form>
+  </div>
+  </section>
+
+  <section id="v-matches" hidden>
+    <div class="list" id="mlist"><p class="empty">No matches yet. Once your profile is saved, the next crawl adds roles here, each with a fit score and the reason it was picked.</p></div>
+  </section>
+
+  <section id="v-admin" hidden>
+    <p class="lede">Profiles saved so far. Only admins see this tab. Export profiles for a crawl, then import the matches file the crawl produces.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-block:12px">
+      <button type="button" class="btn" id="export">Download profiles (JSON)</button>
+      <label class="btn" for="importfile">Import matches (JSON)</label><input type="file" id="importfile" accept=".json" hidden>
+      <span class="cvmeta" id="admmsg"></span>
+    </div>
+    <div class="tbl"><table class="adm"><thead><tr><th>Name</th><th>Study</th><th>Fields (priority first)</th><th>Cities</th><th>German</th><th>CV</th><th>Updated</th></tr></thead><tbody id="admrows"><tr><td colspan="7" class="empty">No sign-ups yet.</td></tr></tbody></table></div>
+  </section>
+  </div><!-- /#app -->
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <div class="meter"><div class="bar"><i id="meterbar"></i></div><span class="t" id="metertext">0 of 9 required answers</span></div>
+    <span class="savestate" id="savestate"></span>
+    <button type="button" class="btn primary" id="save" disabled>Save profile</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+  const CFG=window.JOB_RADAR_CONFIG||{};
+  function gate(msg,kind){const g=$("gate");g.textContent=msg||"";g.className="notice"+(kind?" "+kind:"");g.hidden=!msg}
+
+  if(!window.supabase||!CFG.supabaseUrl||!CFG.supabaseAnonKey||/YOUR-/.test(CFG.supabaseUrl+CFG.supabaseAnonKey)){
+    gate("This site isn't connected to its database yet. The owner needs to fill in config.js (see README).","bad");return;
+  }
+  const sb=window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,detectSessionInUrl:true}});
+
+  const FIELDS={
+    "Tech & data":["Software development","Backend / Python","Frontend / web","Mobile apps","AI / Machine learning","Generative AI / LLMs","Data science","Data engineering","Data analytics / BI","Cloud / DevOps","Cybersecurity","IT support / admin","QA / testing","Embedded / IoT","Robotics"],
+    "Engineering":["Mechanical engineering","Electrical engineering","Automotive","Aerospace","Renewable energy","Civil / construction","Chemical / process","Biotech / life sciences","Maritime / shipping"],
+    "Business":["IT / tech consulting","Management consulting","Product management","Project management","UX / UI design","Finance / controlling","Marketing / growth","Sales / business development","Supply chain / logistics","HR / recruiting"],
+    "Research":["Academic research","Lab work"]
+  };
+  const REQ=["name","email","city","uni","degree","subject","permit","types","fields","cities","german","english","consent"];
+  let me=null,isAdmin=false,saving=false,dirty=false,lastSaved=null,prev={},cvFileObj=null,allProfiles=[];
+
+  // ---------- Auth ----------
+  let otpEmail="";
+  $("authform").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const email=$("authemail").value.trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)){$("authmsg").textContent="Enter a valid email address.";return}
+    $("sendlink").disabled=true;$("authmsg").textContent="Sending…";
+    const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
+    $("sendlink").disabled=false;
+    if(error){$("authmsg").textContent="Couldn't send the email: "+error.message;return}
+    otpEmail=email;$("codewrap").hidden=false;
+    $("authmsg").textContent="Check your inbox (and spam folder) for an email from Job Radar. Click the link, or type the code here.";
+  });
+  $("verify").addEventListener("click",async()=>{
+    const token=$("authcode").value.trim();
+    if(!token){$("authmsg").textContent="Type the code from the email.";return}
+    const {error}=await sb.auth.verifyOtp({email:otpEmail||$("authemail").value.trim(),token,type:"email"});
+    if(error)$("authmsg").textContent="That code didn't work: "+error.message;
+  });
+  $("signout").addEventListener("click",async()=>{await sb.auth.signOut();location.reload()});
+
+  // ---------- Form helpers ----------
+  const fc=$("fieldchips");
+  fc.innerHTML=Object.entries(FIELDS).map(([g,list])=>`<div class="group-t" style="flex-basis:100%">${esc(g)}</div>`+list.map(v=>`<label class="chip"><input type="checkbox" value="${esc(v)}"><span>${esc(v)}<b class="rank"></b></span></label>`).join("")).join("");
+  let fieldOrder=[];
+  fc.addEventListener("change",e=>{const v=e.target.value;if(e.target.checked){if(!fieldOrder.includes(v))fieldOrder.push(v)}else fieldOrder=fieldOrder.filter(x=>x!==v);paintRanks()});
+  function paintRanks(){fc.querySelectorAll("input").forEach(i=>{const r=fieldOrder.indexOf(i.value);i.nextElementSibling.querySelector(".rank").textContent=r>=0&&r<3?String(r+1):""})}
+  const sets=[...document.querySelectorAll("#form fieldset")];
+  $("toc").innerHTML=sets.map(s=>`<a href="#${s.id}" data-for="${s.id}"><span>${esc(s.dataset.title)}</span><span class="st"></span></a>`).join("");
+  $("toc").addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;e.preventDefault();$(a.dataset.for).scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"start"})});
+  function addLinkRow(l={}){
+    const row=document.createElement("div");row.className="linkrow";const n=$("watchlist").children.length+Date.now()%1000;
+    row.innerHTML=`<input type="text" aria-label="What is it" placeholder="What is it (e.g. Airbus careers)" id="wl-l-${n}" value="${esc(l.label||"")}"><input type="url" aria-label="URL" placeholder="https://…" id="wl-u-${n}" value="${esc(l.url||"")}"><button type="button" class="btn ghost">Remove</button>`;
+    row.querySelector("button").addEventListener("click",()=>{row.remove();touch()});
+    $("watchlist").appendChild(row);
+  }
+  $("addlink").addEventListener("click",()=>{addLinkRow();touch()});
+  function collect(){
+    const o={};
+    document.querySelectorAll("#form input[name],#form select[name],#form textarea[name]").forEach(el=>{o[el.name]=el.type==="checkbox"?el.checked:el.value.trim()});
+    document.querySelectorAll("#form .chips[data-name]").forEach(c=>{const vals=[...c.querySelectorAll("input:checked")].map(i=>i.value);o[c.dataset.name]=c.dataset.name==="fields"?fieldOrder.filter(v=>vals.includes(v)).concat(vals.filter(v=>!fieldOrder.includes(v))):vals});
+    o.watch=[...$("watchlist").children].map(r=>{const [a,b]=r.querySelectorAll("input");return{label:a.value.trim(),url:b.value.trim()}}).filter(x=>x.url||x.label);
+    return o;
+  }
+  function fill(o){
+    if(!o)return;
+    document.querySelectorAll("#form input[name],#form select[name],#form textarea[name]").forEach(el=>{if(!(el.name in o))return;if(el.type==="checkbox")el.checked=!!o[el.name];else el.value=o[el.name]??""});
+    document.querySelectorAll("#form .chips[data-name]").forEach(c=>{const vals=o[c.dataset.name]||[];c.querySelectorAll("input").forEach(i=>i.checked=vals.includes(i.value))});
+    fieldOrder=(o.fields||[]).slice();paintRanks();
+    $("watchlist").innerHTML="";(o.watch||[]).forEach(addLinkRow);
+    if(o.cvtext){$("cvtextwrap").hidden=false;$("cvmeta").textContent=(o.cvFile?o.cvFile+" · ":"")+o.cvtext.length.toLocaleString()+" characters"}
+    if(!$("active").value)$("active").value="active";
+  }
+  function progress(){
+    const o=collect();
+    const miss=REQ.filter(k=>{const v=o[k];return Array.isArray(v)?!v.length:!v});
+    if(o.email&&!/^\S+@\S+\.\S+$/.test(o.email)&&!miss.includes("email"))miss.push("email");
+    const done=REQ.length-miss.length;
+    $("meterbar").style.width=Math.round(done/REQ.length*100)+"%";
+    $("metertext").textContent=miss.length?`${done} of ${REQ.length} required answers${o.cvtext?"":" · CV not added yet"}`:(o.cvtext?"All required answers given":"All required answers given · adding a CV makes matches much better");
+    sets.forEach(s=>{
+      const a=document.querySelector(`#toc a[data-for="${s.id}"]`);
+      const names=[...s.querySelectorAll("[name]")].map(e=>e.name).concat([...s.querySelectorAll(".chips[data-name]")].map(c=>c.dataset.name));
+      const m=names.filter(n=>REQ.includes(n)&&miss.includes(n));
+      const filled=names.some(n=>{const v=o[n];return Array.isArray(v)?v.length:!!v})||(s.id==="s-links"&&o.watch.length);
+      a.classList.toggle("req",m.length>0);a.classList.toggle("done",!m.length&&!!filled);
+      a.querySelector(".st").textContent=m.length?"needed":(filled?"✓":"");
+    });
+    return miss;
+  }
+  function draftKey(){return "jr-draft-"+(me?me.id:"anon")}
+  function touch(){dirty=true;progress();setState();try{localStorage.setItem(draftKey(),JSON.stringify(collect()))}catch(e){}}
+  $("form").addEventListener("input",touch);$("form").addEventListener("change",touch);
+  $("form").addEventListener("submit",e=>e.preventDefault());
+  function setState(msg){
+    const s=$("savestate");
+    if(msg){s.textContent=msg}else s.textContent=saving?"Saving…":dirty?"Unsaved changes":(lastSaved?"Saved "+lastSaved:"");
+    $("save").disabled=!me||saving||!dirty;
+  }
+
+  // ---------- CV ----------
+  async function readCV(file){
+    if(file.size>5*1024*1024){$("cvmeta").textContent="That file is over 5 MB. Export a smaller PDF, or paste the text.";return}
+    $("cvmeta").textContent="Reading "+file.name+"…";
+    try{
+      let text="";const name=file.name.toLowerCase();
+      if(name.endsWith(".pdf")){
+        if(!window.pdfjsLib)throw new Error("The PDF reader didn't load. Paste the text instead.");
+        const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+        for(let p=1;p<=Math.min(pdf.numPages,12);p++){
+          const tc=await (await pdf.getPage(p)).getTextContent();let line="",lastY=null;
+          for(const it of tc.items){const y=it.transform?it.transform[5]:null;if(lastY!==null&&y!==null&&Math.abs(y-lastY)>3){text+=line.trim()+"\n";line=""}line+=it.str+(it.hasEOL?"\n":" ");lastY=y}
+          text+=line.trim()+"\n\n";
+        }
+      }else if(name.endsWith(".docx")){
+        if(!window.mammoth)throw new Error("The Word reader didn't load. Paste the text instead.");
+        text=(await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()})).value;
+      }else text=await file.text();
+      text=text.replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim().slice(0,60000);
+      cvFileObj=file;$("cvfile").dataset.fname=file.name;
+      if(text.length<200){$("cvmeta").textContent=file.name+": very little text found (scanned PDF?). The file will still be saved; please paste the text too.";$("cvtextwrap").hidden=false;touch();return}
+      $("cvtext").value=text;$("cvtextwrap").hidden=false;
+      $("cvmeta").textContent=file.name+" · "+text.length.toLocaleString()+" characters read. Check the text below, then save.";
+      touch();
+    }catch(err){$("cvmeta").textContent=(err&&err.message)||"Couldn't read that file. Paste the text instead.";$("cvtextwrap").hidden=false}
+  }
+  $("cvfile").addEventListener("change",e=>{const f=e.target.files[0];if(f)readCV(f)});
+  $("cvpastebtn").addEventListener("click",()=>{$("cvtextwrap").hidden=false;$("cvtext").focus()});
+  const drop=$("drop");
+  ["dragenter","dragover"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")}));
+  ["dragleave","drop"].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove("over")}));
+  drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)readCV(f)});
+
+  // ---------- Save / delete ----------
+  $("save").addEventListener("click",async()=>{
+    if(!me||saving)return;
+    const o=collect(),miss=progress();
+    if(!o.consent){setState("Tick the consent box to save.");$("s-alerts").scrollIntoView({block:"start"});return}
+    saving=true;setState();
+    try{
+      let cv_path=prev.cv_path||null;
+      if(cvFileObj){
+        const ext=(cvFileObj.name.split(".").pop()||"pdf").toLowerCase().replace(/[^a-z0-9]/g,"");
+        cv_path=me.id+"/cv."+ext;
+        const up=await sb.storage.from("cvs").upload(cv_path,cvFileObj,{upsert:true,contentType:cvFileObj.type||undefined});
+        if(up.error)throw up.error;
+        o.cvFile=cvFileObj.name;cvFileObj=null;
+      }else o.cvFile=prev.data&&prev.data.cvFile||"";
+      const cvtext=o.cvtext;delete o.cvtext;
+      const row={id:me.id,email:me.email,data:o,cv_text:cvtext||null,cv_path,complete:!miss.length,updated_at:new Date().toISOString()};
+      const {error}=await sb.from("profiles").upsert(row);
+      if(error)throw error;
+      prev=row;dirty=false;lastSaved=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+      try{localStorage.removeItem(draftKey())}catch(e){}
+      gate(miss.length?"Saved. A few required answers are still missing; the crawl uses whatever you've filled in.":"Profile saved. The next crawl will look for roles for you.","ok");
+      if(isAdmin)loadAdmin();
+    }catch(err){gate("Couldn't save: "+(err.message||err)+". Try again in a minute.","bad")}
+    saving=false;setState();
+  });
+  let delArmed=false;
+  $("delete").addEventListener("click",async()=>{
+    if(!me)return;
+    if(!delArmed){delArmed=true;$("delconfirm").textContent="Click again to delete your profile, CV and matches for good.";$("delete").textContent="Yes, delete everything";setTimeout(()=>{delArmed=false;$("delete").textContent="Delete my profile";$("delconfirm").textContent=""},6000);return}
+    try{
+      const files=await sb.storage.from("cvs").list(me.id);
+      if(files.data&&files.data.length)await sb.storage.from("cvs").remove(files.data.map(f=>me.id+"/"+f.name));
+      await sb.from("matches").delete().eq("user_id",me.id);
+      const {error}=await sb.from("profiles").delete().eq("id",me.id);if(error)throw error;
+      prev={};$("form").reset();fieldOrder=[];paintRanks();$("watchlist").innerHTML="";$("cvtext").value="";$("cvtextwrap").hidden=true;$("cvmeta").textContent="No CV yet";$("mlist").innerHTML="";
+      $("delconfirm").textContent="Deleted.";dirty=false;progress();setState();
+    }catch(err){$("delconfirm").textContent="Couldn't delete: "+(err.message||err)}
+    delArmed=false;$("delete").textContent="Delete my profile";
+  });
+
+  // ---------- Views ----------
+  function show(v){["profile","matches","admin"].forEach(k=>{$("v-"+k).hidden=k!==v;$("t-"+k).setAttribute("aria-selected",String(k===v))});try{localStorage.setItem("jr-view",v)}catch(e){}}
+  document.querySelectorAll(".vbtn").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+
+  // ---------- Matches ----------
+  const MST=[["new","To review"],["saved","Saved"],["applied","Applied"],["interview","Interview"],["rejected","Rejected"],["skipped","Not for me"],["closed","No longer available"]];
+  async function loadMatches(){
+    const {data,error}=await sb.from("matches").select("*").eq("user_id",me.id).order("fit",{ascending:false}).limit(1000);
+    if(error||!data)return;
+    $("t-matches-n").textContent=data.length?" "+data.length:"";
+    if(!data.length){$("mlist").innerHTML='<p class="empty">No matches yet. Once your profile is saved, the next crawl adds roles here, each with a fit score and the reason it was picked.</p>';return}
+    $("mlist").innerHTML=data.map(j=>{
+      const lp=j.language==="English"?'<span class="pill en">English OK</span>':j.language==="German required"?'<span class="pill de">German required</span>':j.language?`<span class="pill">${esc(j.language)}</span>`:"";
+      const opts=MST.map(([v,l])=>`<option value="${v}"${(j.status||"new")===v?" selected":""}>${l}</option>`).join("");
+      return `<article class="job" data-id="${j.id}"><div class="fit">${esc(j.fit??"–")}<small>/5</small></div>
+        <div style="min-width:0"><a class="t" href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title)}</a>
+        <div class="meta"><span class="co">${esc(j.company)}</span><span>${esc(j.location)}</span>${j.mode?`<span>${esc(j.mode)}</span>`:""}${j.posted?`<span>posted ${esc(j.posted)}</span>`:""}</div>
+        ${j.why?`<p class="why">${esc(j.why)}</p>`:""}<div class="pills">${lp}${j.type?`<span class="pill">${esc(j.type)}</span>`:""}${j.hours?`<span class="pill">${esc(j.hours)}</span>`:""}</div></div>
+        <div class="side"><select aria-label="Status for ${esc(j.title)}" id="ms-${j.id}">${opts}</select></div></article>`;
+    }).join("");
+  }
+  $("mlist").addEventListener("change",async e=>{
+    const s=e.target.closest("select");if(!s)return;
+    const {error}=await sb.from("matches").update({status:s.value}).eq("id",s.closest(".job").dataset.id);
+    if(error)s.title="Couldn't save this status.";
+  });
+
+  // ---------- Admin ----------
+  async function loadAdmin(){
+    const {data,error}=await sb.from("profiles").select("*").order("updated_at",{ascending:false}).limit(1000);
+    if(error||!data)return;
+    allProfiles=data;$("t-admin-n").textContent=" "+data.length;
+    if(!data.length)return;
+    $("admrows").innerHTML=data.map(p=>{const d=p.data||{};return `<tr><td><b>${esc(d.name||"(no name)")}</b><br><span class="cvmeta">${esc(p.email||"")}</span></td><td>${esc([d.degree,d.subject].filter(Boolean).join(" · "))}<br><span class="cvmeta">${esc(d.uni||"")}</span></td><td>${esc((d.fields||[]).slice(0,5).join(", "))}</td><td>${esc(d.cities||"")}</td><td>${esc(d.german||"")}</td><td>${p.cv_path?`<button type="button" class="btn ghost" data-cv="${esc(p.cv_path)}">Open</button>`:(p.cv_text?"Text only":"No")}</td><td class="cvmeta">${esc((p.updated_at||"").slice(0,10))}${d.active==="paused"?"<br>paused":""}</td></tr>`}).join("");
+  }
+  $("admrows").addEventListener("click",async e=>{
+    const b=e.target.closest("[data-cv]");if(!b)return;
+    const {data,error}=await sb.storage.from("cvs").createSignedUrl(b.dataset.cv,300);
+    if(data&&data.signedUrl)window.open(data.signedUrl,"_blank","noopener");else $("admmsg").textContent="Couldn't open the CV: "+(error&&error.message);
+  });
+  function download(name,obj){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+  $("export").addEventListener("click",async()=>{
+    await loadAdmin();
+    const out=allProfiles.filter(p=>(p.data||{}).active!=="paused").map(p=>({user_id:p.id,email:p.email,updated_at:p.updated_at,profile:p.data,cv_text:p.cv_text}));
+    const {data:m}=await sb.from("matches").select("user_id,url").limit(10000);
+    download("job-radar-profiles-"+new Date().toISOString().slice(0,10)+".json",{exported_at:new Date().toISOString(),profiles:out,already_matched:m||[]});
+    $("admmsg").textContent=`Downloaded ${out.length} active profiles.`;
+  });
+  $("importfile").addEventListener("change",async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{
+      const j=JSON.parse(await f.text());const arr=Array.isArray(j)?j:(j.matches||[]);
+      const byEmail=Object.fromEntries(allProfiles.map(p=>[String(p.email||"").toLowerCase(),p.id]));
+      const keep=["title","company","location","mode","language","type","hours","fit","why","url","source","posted","found_at","status"];
+      const rows=arr.map(r=>{const o={user_id:r.user_id||byEmail[String(r.email||"").toLowerCase()]};keep.forEach(k=>{if(r[k]!==undefined&&r[k]!==null&&r[k]!=="")o[k]=r[k]});if(r.foundAt&&!o.found_at)o.found_at=r.foundAt;delete o.status;return o}).filter(r=>r.user_id&&r.title&&r.url);
+      let n=0;
+      for(let i=0;i<rows.length;i+=200){const {error}=await sb.from("matches").upsert(rows.slice(i,i+200),{onConflict:"user_id,url",ignoreDuplicates:true});if(error)throw error;n+=Math.min(200,rows.length-i)}
+      $("admmsg").textContent=`Imported ${n} matches (${arr.length-rows.length} skipped: missing user, title or url).`;
+    }catch(err){$("admmsg").textContent="Import failed: "+(err.message||err)}
+    e.target.value="";
+  });
+
+  // ---------- Boot ----------
+  async function enter(session){
+    if(!session){me=null;$("auth").hidden=false;$("app").hidden=true;$("who").hidden=true;$("savebar").hidden=true;gate("");return}
+    if(me&&me.id===session.user.id)return;
+    me=session.user;
+    $("auth").hidden=true;$("app").hidden=false;$("who").hidden=false;$("savebar").hidden=false;$("whoemail").textContent=me.email;
+    if(location.hash.includes("access_token"))history.replaceState(null,"",location.pathname);
+    gate("Loading your profile…");
+    const {data:row,error}=await sb.from("profiles").select("*").eq("id",me.id).maybeSingle();
+    if(error){gate("Couldn't load your profile: "+error.message,"bad");return}
+    let draft=null;try{draft=JSON.parse(localStorage.getItem(draftKey())||"null")}catch(e){}
+    if(row){prev=row;fill(Object.assign({},row.data,{cvtext:row.cv_text||""}));lastSaved=new Date(row.updated_at).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});gate("")}
+    else gate("Welcome. Fill in the sections below and press Save profile.","");
+    if(draft&&(!row||dirty===false&&JSON.stringify(draft)!==JSON.stringify(Object.assign({},row.data,{cvtext:row.cv_text||""})))){if(!row){fill(draft);dirty=true}}
+    if(!$("email").value)$("email").value=me.email;
+    progress();setState();
+    loadMatches();
+    const {data:adm}=await sb.rpc("is_admin");isAdmin=!!adm;
+    if(isAdmin){$("t-admin").hidden=false;loadAdmin()}
+    try{const v=localStorage.getItem("jr-view");if(v==="matches"||(v==="admin"&&isAdmin))show(v)}catch(e){}
+  }
+  sb.auth.onAuthStateChange((_ev,session)=>{setTimeout(()=>enter(session),0)});
+  sb.auth.getSession().then(({data})=>enter(data.session));
+  window.addEventListener("beforeunload",e=>{if(dirty&&me){e.preventDefault();e.returnValue=""}});
+})();
+
+</script>
+</body>
+</html>
