@@ -142,13 +142,17 @@ a{color:var(--ink);text-underline-offset:3px}
 
   <section id="auth" hidden>
     <form id="authform" class="authbox" novalidate>
-      <h2>Sign in with your email</h2>
-      <p class="hint" style="margin:0">No password needed. We'll email you a sign-in link and a 6-digit code.</p>
+      <div class="views" role="tablist" aria-label="Sign in or register" style="margin-top:-6px">
+        <button type="button" class="vbtn" role="tab" id="m-in" aria-selected="true">Sign in</button>
+        <button type="button" class="vbtn" role="tab" id="m-up" aria-selected="false">Create account</button>
+      </div>
       <div class="f"><label for="authemail">Email</label><input type="email" id="authemail" autocomplete="email" placeholder="you@example.com" required></div>
-      <div><button type="submit" class="btn primary" id="sendlink">Email me a sign-in link</button></div>
-      <div class="f" id="codewrap" hidden><label for="authcode">Or type the 6-digit code from the email</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><input type="text" id="authcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" style="max-width:180px"><button type="button" class="btn" id="verify">Sign in</button></div></div>
+      <div class="f"><label for="authpw">Password</label><input type="password" id="authpw" autocomplete="current-password" minlength="8" required></div>
+      <div class="f" id="pw2wrap" hidden><label for="authpw2">Repeat password</label><input type="password" id="authpw2" autocomplete="new-password" minlength="8"></div>
+      <p class="hint" id="pwhint" style="margin:0" hidden>At least 8 characters. There's no email reset yet, so pick one you'll remember.</p>
+      <div><button type="submit" class="btn primary" id="authgo">Sign in</button></div>
       <p class="cvmeta" id="authmsg"></p>
+      <p class="hint" style="margin:0">Forgot your password? Ask the person who sent you the link to reset it.</p>
     </form>
   </section>
 
@@ -375,23 +379,33 @@ a{color:var(--ink);text-underline-offset:3px}
   let me=null,isAdmin=false,saving=false,dirty=false,lastSaved=null,prev={},cvFileObj=null,allProfiles=[];
 
   // ---------- Auth ----------
-  let otpEmail="";
+  let mode="in";
+  function setMode(m){
+    mode=m;$("m-in").setAttribute("aria-selected",String(m==="in"));$("m-up").setAttribute("aria-selected",String(m==="up"));
+    $("pw2wrap").hidden=m!=="up";$("pwhint").hidden=m!=="up";
+    $("authpw").autocomplete=m==="up"?"new-password":"current-password";
+    $("authgo").textContent=m==="up"?"Create account":"Sign in";$("authmsg").textContent="";
+  }
+  $("m-in").addEventListener("click",()=>setMode("in"));
+  $("m-up").addEventListener("click",()=>setMode("up"));
   $("authform").addEventListener("submit",async e=>{
     e.preventDefault();
-    const email=$("authemail").value.trim();
+    const email=$("authemail").value.trim(),pw=$("authpw").value;
     if(!/^\S+@\S+\.\S+$/.test(email)){$("authmsg").textContent="Enter a valid email address.";return}
-    $("sendlink").disabled=true;$("authmsg").textContent="Sending…";
-    const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:true}});
-    $("sendlink").disabled=false;
-    if(error){$("authmsg").textContent="Couldn't send the email: "+error.message;return}
-    otpEmail=email;$("codewrap").hidden=false;
-    $("authmsg").textContent="Check your inbox (and spam folder) for an email from Job Radar. Click the link, or type the code here.";
-  });
-  $("verify").addEventListener("click",async()=>{
-    const token=$("authcode").value.trim();
-    if(!token){$("authmsg").textContent="Type the code from the email.";return}
-    const {error}=await sb.auth.verifyOtp({email:otpEmail||$("authemail").value.trim(),token,type:"email"});
-    if(error)$("authmsg").textContent="That code didn't work: "+error.message;
+    if(pw.length<8){$("authmsg").textContent="The password needs at least 8 characters.";return}
+    if(mode==="up"&&pw!==$("authpw2").value){$("authmsg").textContent="The two passwords don't match.";return}
+    $("authgo").disabled=true;$("authmsg").textContent=mode==="up"?"Creating your account…":"Signing in…";
+    let res;
+    if(mode==="up")res=await sb.auth.signUp({email,password:pw});
+    else res=await sb.auth.signInWithPassword({email,password:pw});
+    $("authgo").disabled=false;
+    if(res.error){
+      const m=res.error.message||"";
+      $("authmsg").textContent=/already registered|already exists/i.test(m)?"An account with this email already exists. Use Sign in.":/invalid login/i.test(m)?"Wrong email or password.":"Couldn't continue: "+m;
+      return;
+    }
+    if(mode==="up"&&!res.data.session){$("authmsg").textContent="Account created, but email confirmation is switched on for this site, so you can't sign in yet. Tell the person who runs Job Radar.";return}
+    $("authmsg").textContent="";
   });
   $("signout").addEventListener("click",async()=>{await sb.auth.signOut();location.reload()});
 
@@ -530,7 +544,7 @@ a{color:var(--ink);text-underline-offset:3px}
 
   // ---------- Views ----------
   function show(v){["profile","matches","admin"].forEach(k=>{$("v-"+k).hidden=k!==v;$("t-"+k).setAttribute("aria-selected",String(k===v))});try{localStorage.setItem("jr-view",v)}catch(e){}}
-  document.querySelectorAll(".vbtn").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
+  document.querySelectorAll(".vbtn[data-view]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));
 
   // ---------- Matches ----------
   const MST=[["new","To review"],["saved","Saved"],["applied","Applied"],["interview","Interview"],["rejected","Rejected"],["skipped","Not for me"],["closed","No longer available"]];
